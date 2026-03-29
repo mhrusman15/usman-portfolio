@@ -197,18 +197,24 @@ function ReviewSlide({
                 <StarsDisplay rating={review.rating} />
               </div>
             </div>
-            <p className="reviews-card-body reviews-c-body">
-              {shown}
-              {!isSide && long && (
-                <button
-                  type="button"
-                  className="reviews-show-more"
-                  onClick={onToggleExpand}
-                >
-                  {expanded ? "Show less" : "Show more"}
-                </button>
-              )}
-            </p>
+            {isSide ? (
+              <p className="reviews-card-body reviews-c-body">{shown}</p>
+            ) : (
+              <div
+                className={`reviews-c-body-panel ${expanded ? "is-expanded" : ""}`}
+              >
+                <p className="reviews-card-body reviews-c-body">{shown}</p>
+                {long && (
+                  <button
+                    type="button"
+                    className="reviews-show-more reviews-show-more--panel"
+                    onClick={onToggleExpand}
+                  >
+                    {expanded ? "Show less" : "Show more"}
+                  </button>
+                )}
+              </div>
+            )}
             <div className="reviews-card-footer reviews-c-footer">
               <span className="reviews-footer-source">
                 <FaGlobe aria-hidden />

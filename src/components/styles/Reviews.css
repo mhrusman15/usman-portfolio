@@ -120,8 +120,8 @@
 }
 
 .reviews-peek-col.is-side {
-  flex: 0 1 26%;
-  max-width: 300px;
+  flex: 0 1 22%;
+  max-width: 260px;
   opacity: 0.58;
   transform: scale(0.88);
   pointer-events: none;
@@ -129,8 +129,8 @@
 }
 
 .reviews-peek-col.is-center {
-  flex: 1 1 48%;
-  max-width: 560px;
+  flex: 1 1 56%;
+  max-width: min(920px, 100%);
   z-index: 2;
   opacity: 1;
   transform: scale(1);
@@ -159,6 +159,7 @@
 }
 
 .reviews-c-content--side {
+  display: flex;
   flex-direction: column;
   gap: 14px;
   min-height: 0;
@@ -196,26 +197,50 @@
   line-height: 1.5;
 }
 
-.reviews-c-content {
-  display: flex;
-  align-items: stretch;
-  gap: 48px;
+/* Main card: text gets most width; screenshot in a fixed-proportion column */
+.reviews-c-content:not(.reviews-c-content--side) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 34%);
+  gap: clamp(18px, 3vw, 32px);
+  align-items: start;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  min-height: 280px;
+  min-height: 0;
 }
 
 .reviews-c-info {
-  flex: 1;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   display: flex;
-  gap: 24px;
+  gap: clamp(14px, 2vw, 22px);
   align-items: flex-start;
 }
 
+.reviews-c-content--side .reviews-c-info {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.reviews-c-image-wrap {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.reviews-c-content--side .reviews-c-image-wrap {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.reviews-c-number {
+  flex-shrink: 0;
+  width: fit-content;
+  line-height: 1;
+}
+
 .reviews-c-number h3 {
-  font-size: 56px;
+  font-size: clamp(40px, 4.5vw, 56px);
   line-height: 1;
   margin: 0;
   font-weight: 600;
@@ -229,6 +254,37 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Padded glass strip for review copy — capped height so the card stays on screen */
+.reviews-c-body-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  max-height: 11.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.reviews-c-body-panel.is-expanded {
+  max-height: min(38vh, 320px);
+}
+
+.reviews-c-body-panel .reviews-c-body {
+  margin: 0;
+  max-width: 65ch;
+}
+
+.reviews-show-more--panel {
+  display: inline-block;
+  margin-top: 10px;
+  margin-left: 0;
 }
 
 .reviews-c-header-row {
@@ -249,23 +305,31 @@
 }
 
 .reviews-c-image-wrap {
-  flex: 1;
   min-width: 0;
-  max-width: 48%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.reviews-c-content:not(.reviews-c-content--side) .reviews-c-image-wrap {
+  position: sticky;
+  top: 0;
 }
 
 .reviews-c-attachment {
   max-width: 100%;
   width: auto;
   height: auto;
-  max-height: 360px;
+  max-height: min(320px, 36vh);
   border-radius: 8px;
   display: block;
   object-fit: contain;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reviews-c-content:not(.reviews-c-content--side) .reviews-c-image-placeholder {
+  max-height: min(280px, 34vh);
+  min-height: 160px;
 }
 
 .reviews-c-image-placeholder {
@@ -441,8 +505,8 @@
     padding: 0 50px;
   }
 
-  .reviews-c-content {
-    gap: 36px;
+  .reviews-c-content:not(.reviews-c-content--side) {
+    gap: 26px;
   }
 
   .reviews-c-number h3 {
@@ -455,20 +519,22 @@
     padding: 0 44px;
   }
 
-  .reviews-c-content {
-    flex-direction: column;
-    gap: 28px;
-    min-height: 0;
-  }
-
-  .reviews-c-image-wrap {
-    max-width: 100%;
-    order: 2;
+  .reviews-c-content:not(.reviews-c-content--side) {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 
   .reviews-c-info {
-    order: 1;
+    grid-column: 1;
+    grid-row: 1;
     width: 100%;
+  }
+
+  .reviews-c-image-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    max-width: 100%;
+    position: static;
   }
 
   .reviews-c-nav-row .reviews-c-arrow {
