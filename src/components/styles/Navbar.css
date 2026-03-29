@@ -3,6 +3,7 @@
   max-width: var(--cMaxWidth);
   width: var(--cWidth);
   justify-content: space-between;
+  align-items: center;
   padding: 20px 0px;
   margin-bottom: -100px;
   box-sizing: border-box;
@@ -11,6 +12,7 @@
   transform: translateX(-50%);
   top: 0;
   z-index: 9999;
+  column-gap: 16px;
 }
 .header ul {
   font-size: 12px;
@@ -31,14 +33,16 @@
   cursor: pointer;
 }
 .navbar-connect {
-  position: absolute;
   display: none;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   font-size: 15px;
   letter-spacing: 1px;
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  flex-shrink: 1;
 }
 .navbar-title {
   font-weight: 700;
@@ -76,8 +80,32 @@
   }
 }
 @media only screen and (min-width: 900px) {
+  .header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: clamp(20px, 3vw, 40px);
+  }
+
+  .navbar-title {
+    justify-self: start;
+  }
+
   .navbar-connect {
     display: block;
+    justify-self: center;
+    max-width: min(100%, 280px);
+    padding: 0 8px;
+  }
+
+  .header ul {
+    justify-self: end;
+  }
+}
+
+@media only screen and (min-width: 1200px) {
+  .navbar-connect {
+    max-width: min(100%, 340px);
   }
 }
 @media only screen and (min-width: 1200px) {

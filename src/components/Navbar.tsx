@@ -59,6 +59,7 @@ const Navbar = () => {
         <a
           href="mailto:musmannawaz007@gmail.com"
           className="navbar-connect"
+          title="musmannawaz007@gmail.com"
           data-cursor="disable"
         >
           musmannawaz007@gmail.com

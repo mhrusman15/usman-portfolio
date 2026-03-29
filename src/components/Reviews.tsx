@@ -157,23 +157,35 @@ function ReviewSlide({
   slideIndex,
   expanded,
   onToggleExpand,
+  isSide = false,
 }: {
   review: PublicReview;
   slideIndex: number;
   expanded: boolean;
   onToggleExpand: () => void;
+  isSide?: boolean;
 }) {
-  const long = review.body.length > BODY_PREVIEW_LEN;
-  const shown =
-    expanded || !long ? review.body : `${review.body.slice(0, BODY_PREVIEW_LEN)}…`;
+  const previewLen = isSide ? 96 : BODY_PREVIEW_LEN;
+  const long = review.body.length > previewLen;
+  const shown = isSide
+    ? long
+      ? `${review.body.slice(0, previewLen)}…`
+      : review.body
+    : expanded || !long
+      ? review.body
+      : `${review.body.slice(0, previewLen)}…`;
 
   return (
-    <div className="reviews-c-slide">
-      <div className="reviews-glass reviews-c-content">
+    <div className={`reviews-c-slide ${isSide ? "reviews-c-slide--side" : ""}`}>
+      <div
+        className={`reviews-glass reviews-c-content ${isSide ? "reviews-c-content--side" : ""}`}
+      >
         <div className="reviews-c-info">
-          <div className="reviews-c-number">
-            <h3>{String(slideIndex + 1).padStart(2, "0")}</h3>
-          </div>
+          {!isSide && (
+            <div className="reviews-c-number">
+              <h3>{String(slideIndex + 1).padStart(2, "0")}</h3>
+            </div>
+          )}
           <div className="reviews-c-details">
             <div className="reviews-c-header-row">
               <ReviewerAvatar
@@ -187,7 +199,7 @@ function ReviewSlide({
             </div>
             <p className="reviews-card-body reviews-c-body">
               {shown}
-              {long && (
+              {!isSide && long && (
                 <button
                   type="button"
                   className="reviews-show-more"
@@ -448,14 +460,16 @@ const Reviews = () => {
         </p>
       )}
 
-      <div className="reviews-c-wrapper">
-        {n > 0 && (
-          <>
+      <div
+        className={`reviews-c-wrapper ${n > 1 ? "reviews-c-wrapper--peek" : ""}`}
+      >
+        {n > 1 && !loading && (
+          <div className="reviews-c-nav-row">
             <button
               type="button"
-              className="reviews-c-arrow reviews-c-arrow-left"
+              className="reviews-c-arrow"
               onClick={goToPrev}
-              disabled={loading || n <= 1}
+              disabled={loading}
               aria-label="Previous review"
               data-cursor="disable"
             >
@@ -463,15 +477,15 @@ const Reviews = () => {
             </button>
             <button
               type="button"
-              className="reviews-c-arrow reviews-c-arrow-right"
+              className="reviews-c-arrow"
               onClick={goToNext}
-              disabled={loading || n <= 1}
+              disabled={loading}
               aria-label="Next review"
               data-cursor="disable"
             >
               <MdArrowForward />
             </button>
-          </>
+          </div>
         )}
 
         {loading ? (
@@ -480,26 +494,49 @@ const Reviews = () => {
           <div className="reviews-glass reviews-empty reviews-c-empty-box">
             No reviews here yet. Be the first to share feedback using the form below.
           </div>
+        ) : n === 1 ? (
+          <div className="reviews-single-wrap">
+            <ReviewSlide
+              review={reviews[0]}
+              slideIndex={0}
+              expanded={expandedId === reviews[0].id}
+              onToggleExpand={() =>
+                setExpandedId((id) => (id === reviews[0].id ? null : reviews[0].id))
+              }
+            />
+          </div>
         ) : (
           <>
-            <div className="reviews-c-track-container">
-              <div
-                className="reviews-c-track"
-                style={{
-                  transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
-                }}
-              >
-                {reviews.map((review, i) => (
-                  <ReviewSlide
-                    key={review.id}
-                    review={review}
-                    slideIndex={i}
-                    expanded={expandedId === review.id}
-                    onToggleExpand={() =>
-                      setExpandedId((id) => (id === review.id ? null : review.id))
-                    }
-                  />
-                ))}
+            <div className="reviews-peek-stage">
+              <div className="reviews-peek-col is-side">
+                <ReviewSlide
+                  review={reviews[(currentIndex - 1 + n) % n]}
+                  slideIndex={(currentIndex - 1 + n) % n}
+                  expanded={false}
+                  onToggleExpand={() => {}}
+                  isSide
+                />
+              </div>
+              <div className="reviews-peek-col is-center">
+                <ReviewSlide
+                  review={reviews[currentIndex]}
+                  slideIndex={currentIndex}
+                  expanded={expandedId === reviews[currentIndex].id}
+                  onToggleExpand={() =>
+                    setExpandedId((id) =>
+                      id === reviews[currentIndex].id ? null : reviews[currentIndex].id
+                    )
+                  }
+                />
+              </div>
+              <div className="reviews-peek-col is-side">
+                <ReviewSlide
+                  review={reviews[(currentIndex + 1) % n]}
+                  slideIndex={(currentIndex + 1) % n}
+                  expanded={false}
+                  onToggleExpand={() => {}}
+                  isSide
+                />
               </div>
             </div>
 

@@ -67,7 +67,7 @@
   margin-top: 8px;
 }
 
-/* —— Reviews carousel (aligned with Work section pattern) —— */
+/* —— Reviews carousel: center focus + side peek (dark theme unchanged) —— */
 .reviews-c-wrapper {
   position: relative;
   width: 100%;
@@ -76,25 +76,124 @@
   margin-bottom: 48px;
 }
 
-.reviews-c-track-container {
-  overflow: hidden;
-  width: 100%;
-  border-top: 1px solid #363636;
-  border-bottom: 1px solid #363636;
+.reviews-c-wrapper--peek {
+  padding-top: 56px;
 }
 
-.reviews-c-track {
+.reviews-c-nav-row {
+  position: absolute;
+  top: 0;
+  right: 12px;
   display: flex;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
+  gap: 10px;
+  z-index: 12;
+}
+
+.reviews-c-nav-row .reviews-c-arrow {
+  position: static;
+  transform: none;
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+}
+
+.reviews-peek-stage {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(8px, 1.5vw, 18px);
+  min-height: 300px;
+  border-top: 1px solid #363636;
+  border-bottom: 1px solid #363636;
+  padding: 28px 0;
+  overflow: hidden;
+}
+
+.reviews-peek-col {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reviews-peek-col.is-side {
+  flex: 0 1 26%;
+  max-width: 300px;
+  opacity: 0.58;
+  transform: scale(0.88);
+  pointer-events: none;
+  align-self: center;
+}
+
+.reviews-peek-col.is-center {
+  flex: 1 1 48%;
+  max-width: 560px;
+  z-index: 2;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.reviews-single-wrap {
+  border-top: 1px solid #363636;
+  border-bottom: 1px solid #363636;
+  padding: 32px 0;
+}
+
+.reviews-single-wrap .reviews-c-slide {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 20px 8px;
 }
 
 .reviews-c-slide {
   width: 100%;
-  min-width: 100%;
-  flex-shrink: 0;
   box-sizing: border-box;
-  padding: 40px 12px 36px;
+  padding: 24px 8px;
+}
+
+.reviews-c-slide--side {
+  padding: 8px 2px;
+}
+
+.reviews-c-content--side {
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+.reviews-c-content--side .reviews-c-info {
+  width: 100%;
+  gap: 10px;
+}
+
+.reviews-c-content--side .reviews-c-image-wrap {
+  max-width: 100%;
+  max-height: 150px;
+}
+
+.reviews-c-content--side .reviews-c-attachment {
+  max-height: 140px;
+}
+
+.reviews-c-content--side .reviews-c-image-placeholder {
+  min-height: 100px;
+  max-height: 140px;
+}
+
+.reviews-c-content--side .reviews-c-image-placeholder span {
+  font-size: 32px;
+}
+
+.reviews-c-content--side .reviews-card-name {
+  font-size: 0.9rem;
+}
+
+.reviews-c-content--side .reviews-card-body {
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .reviews-c-content {
@@ -278,14 +377,11 @@
   font-size: 0.95rem;
 }
 
-/* Arrows (Work-style) */
+/* Carousel arrows (also used in .reviews-c-nav-row) */
 .reviews-c-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  background: rgba(100, 50, 160, 0.35);
+  border: 1px solid rgba(172, 75, 255, 0.35);
   color: #eae5ec;
   width: 50px;
   height: 50px;
@@ -309,14 +405,6 @@
 .reviews-c-arrow:disabled {
   opacity: 0.25;
   cursor: not-allowed;
-}
-
-.reviews-c-arrow-left {
-  left: -56px;
-}
-
-.reviews-c-arrow-right {
-  right: -56px;
 }
 
 .reviews-c-dots {
@@ -348,27 +436,9 @@
   box-shadow: 0 0 8px rgba(172, 75, 255, 0.4);
 }
 
-@media only screen and (max-width: 1600px) {
-  .reviews-c-arrow-left {
-    left: -48px;
-  }
-
-  .reviews-c-arrow-right {
-    right: -48px;
-  }
-}
-
 @media only screen and (max-width: 1400px) {
   .reviews-c-wrapper {
     padding: 0 50px;
-  }
-
-  .reviews-c-arrow-left {
-    left: 5px;
-  }
-
-  .reviews-c-arrow-right {
-    right: 5px;
   }
 
   .reviews-c-content {
@@ -401,10 +471,26 @@
     width: 100%;
   }
 
-  .reviews-c-arrow {
+  .reviews-c-nav-row .reviews-c-arrow {
     width: 40px;
     height: 40px;
     font-size: 18px;
+  }
+
+  .reviews-peek-col.is-side {
+    display: none;
+  }
+
+  .reviews-peek-col.is-center {
+    flex: 1 1 100%;
+    max-width: 100%;
+    transform: none;
+    opacity: 1;
+  }
+
+  .reviews-peek-stage {
+    padding: 20px 0;
+    min-height: 0;
   }
 }
 
