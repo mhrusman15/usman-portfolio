@@ -11,18 +11,48 @@ import {
   RapierRigidBody,
 } from "@react-three/rapier";
 
-const textureLoader = new THREE.TextureLoader();
-const imageUrls = [
-  "/images/react2.webp",
-  "/images/next2.webp",
-  "/images/node2.webp",
-  "/images/express.webp",
-  "/images/mongo.webp",
-  "/images/mysql.webp",
-  "/images/typescript.webp",
-  "/images/javascript.webp",
+const labels = [
+  "REACT",
+  "NEXT",
+  "NODE",
+  "EXPRESS",
+  "MONGO",
+  "MYSQL",
+  "TS",
+  "JS",
 ];
-const textures = imageUrls.map((url) => textureLoader.load(url));
+const colors = [
+  "#2563eb",
+  "#0f172a",
+  "#16a34a",
+  "#6d28d9",
+  "#15803d",
+  "#ca8a04",
+  "#1d4ed8",
+  "#f59e0b",
+];
+
+const createLabelTexture = (text: string, bg: string) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.Texture();
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = "bold 40px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+};
+
+const textures = labels.map((label, i) => createLabelTexture(label, colors[i]));
 
 const sphereGeometry = new THREE.SphereGeometry(1, 28, 28);
 
@@ -198,11 +228,7 @@ const TechStack = () => {
             />
           ))}
         </Physics>
-        <Environment
-          files="/models/char_enviorment.hdr"
-          environmentIntensity={0.5}
-          environmentRotation={[0, 4, 2]}
-        />
+        <Environment preset="city" environmentIntensity={0.5} />
         <EffectComposer enableNormalPass={false}>
           <N8AO color="#0f002c" aoRadius={2} intensity={1.15} />
         </EffectComposer>

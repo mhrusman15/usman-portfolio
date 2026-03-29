@@ -3,8 +3,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import HoverLinks from "./HoverLinks";
 import { gsap } from "gsap";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
-import logo from "../assets/react.svg";
 import "./styles/Navbar.css";
+
+/** Place your image at public/logo/logo.png (same file as the site favicon). */
+const NAV_LOGO_SRC = "/logo/logo.png";
 
 gsap.registerPlugin(ScrollSmoother, ScrollTrigger);
 export let smoother: ScrollSmoother;
@@ -45,8 +47,8 @@ const Navbar = () => {
       <div className="header">
         <a href="/#" className="navbar-title" data-cursor="disable">
           <img
-            src={logo}
-            alt="Logo"
+            src={NAV_LOGO_SRC}
+            alt=""
             className="navbar-logo"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -70,6 +72,11 @@ const Navbar = () => {
           <li>
             <a data-href="#work" href="#work">
               <HoverLinks text="WORK" />
+            </a>
+          </li>
+          <li>
+            <a data-href="#reviews" href="#reviews">
+              <HoverLinks text="REVIEWS" />
             </a>
           </li>
           <li>

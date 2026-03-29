@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+
 .about-section {
   display: flex;
   align-items: center;
@@ -9,25 +11,45 @@
   width: var(--cWidth);
   margin: auto;
 }
+
 .about-me {
   padding: 50px 0px;
   padding-bottom: 0;
   width: 500px;
   max-width: calc(100% - 15px);
 }
-.about-me h3 {
-  font-size: 25px;
-  text-transform: uppercase;
-  letter-spacing: 7px;
-  font-weight: 400;
-  color: var(--accentColor);
+
+.about-glass {
+  font-family: "Inter", "Geist", system-ui, sans-serif;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border-radius: 22px;
+  background: rgba(12, 16, 28, 0.68);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.45),
+    0 0 80px rgba(100, 60, 180, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.about-me p {
-  font-size: 33px;
-  font-weight: 600;
-  line-height: 36px;
-  letter-spacing: 1px;
+.about-me h3.title {
+  font-family: "Inter", "Geist", system-ui, sans-serif;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  text-transform: uppercase;
+  letter-spacing: 0.45em;
+  font-weight: 500;
+  color: rgba(172, 75, 255, 0.95);
+  margin: 0 0 1.25rem;
+}
+
+.about-me p.para {
+  font-size: clamp(1rem, 3.2vw, 1.125rem);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.94);
+  margin: 0;
 }
 
 @media only screen and (min-width: 600px) {
@@ -35,16 +57,23 @@
     justify-content: center;
   }
 }
+
 @media only screen and (min-width: 768px) {
   .about-me {
-    width: 500px;
+    width: 520px;
     max-width: calc(100% - 70px);
     transform: translateY(0%);
   }
+
   .about-section {
     opacity: 1;
   }
+
+  .about-me p.para {
+    font-size: 1.0625rem;
+  }
 }
+
 @media only screen and (min-width: 1025px) {
   .about-section {
     width: var(--cWidth);
@@ -54,18 +83,30 @@
     padding: 0px;
     opacity: 1;
   }
+
   .about-me {
     padding: 0px;
     width: 50%;
+    max-width: 640px;
   }
-  .about-me p {
-    font-size: 1.9vw;
-    line-height: 2.3vw;
+
+  .about-glass {
+    padding: 2.25rem 2.5rem;
+  }
+
+  .about-me h3.title {
+    margin-bottom: 1.5rem;
+  }
+
+  .about-me p.para {
+    font-size: clamp(1.05rem, 1.15vw, 1.2rem);
+    line-height: 1.62;
   }
 }
+
 @media only screen and (min-width: 1950px) {
-  .about-me p {
-    font-size: 2.5rem;
-    line-height: 2.7rem;
+  .about-me p.para {
+    font-size: 1.25rem;
+    line-height: 1.65;
   }
 }
