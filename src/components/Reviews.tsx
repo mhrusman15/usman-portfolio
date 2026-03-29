@@ -113,27 +113,25 @@ function StarInput({
 function ReviewerAvatar({
   profile_image_url,
   email_hash,
+  className = "",
 }: {
   profile_image_url: string | null;
   email_hash: string | null;
+  className?: string;
 }) {
   const [gravatarFailed, setGravatarFailed] = useState(false);
+  const cls = `reviews-avatar ${className}`.trim();
 
   if (profile_image_url) {
     return (
-      <img
-        className="reviews-avatar"
-        src={profile_image_url}
-        alt=""
-        loading="lazy"
-      />
+      <img className={cls} src={profile_image_url} alt="" loading="lazy" />
     );
   }
 
   if (email_hash && !gravatarFailed) {
     return (
       <img
-        className="reviews-avatar"
+        className={cls}
         src={`https://www.gravatar.com/avatar/${email_hash}?s=160&d=404`}
         alt=""
         loading="lazy"
@@ -144,11 +142,73 @@ function ReviewerAvatar({
 
   return (
     <div
-      className="reviews-avatar reviews-avatar-fallback reviews-avatar-person"
+      className={`reviews-avatar reviews-avatar-fallback reviews-avatar-person ${className}`.trim()}
       aria-hidden
     >
       <FaCircleUser />
     </div>
+  );
+}
+
+function ReviewDesktopDetail({
+  review,
+  expanded,
+  onToggleExpand,
+}: {
+  review: PublicReview;
+  expanded: boolean;
+  onToggleExpand: () => void;
+}) {
+  const long = review.body.length > BODY_PREVIEW_LEN;
+  const shown =
+    expanded || !long ? review.body : `${review.body.slice(0, BODY_PREVIEW_LEN)}…`;
+
+  return (
+    <article className="reviews-d-card reviews-glass">
+      <div className="reviews-d-visual">
+        {review.attachment_url ? (
+          <img
+            className="reviews-d-attachment"
+            src={review.attachment_url}
+            alt=""
+            loading="lazy"
+          />
+        ) : (
+          <div className="reviews-d-avatar-frame">
+            <ReviewerAvatar
+              profile_image_url={review.profile_image_url}
+              email_hash={review.email_hash}
+              className="reviews-d-avatar-lg"
+            />
+          </div>
+        )}
+      </div>
+      <div className="reviews-d-copy">
+        <h3 className="reviews-d-name">{review.name}</h3>
+        <StarsDisplay rating={review.rating} />
+        <div
+          className={`reviews-c-body-panel reviews-d-body-panel ${expanded ? "is-expanded" : ""}`}
+        >
+          <p className="reviews-card-body reviews-c-body">{shown}</p>
+          {long && (
+            <button
+              type="button"
+              className="reviews-show-more reviews-show-more--panel"
+              onClick={onToggleExpand}
+            >
+              {expanded ? "Show less" : "Show more"}
+            </button>
+          )}
+        </div>
+        <div className="reviews-card-footer reviews-d-footer">
+          <span className="reviews-footer-source">
+            <FaGlobe aria-hidden />
+            Portfolio review
+          </span>
+          <time dateTime={review.created_at}>{timeAgo(review.created_at)}</time>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -293,7 +353,12 @@ const Reviews = () => {
 
   useEffect(() => {
     setCurrentIndex(0);
+    setExpandedId(null);
   }, [n]);
+
+  useEffect(() => {
+    setExpandedId(null);
+  }, [currentIndex]);
 
   const goToSlide = useCallback(
     (index: number) => {
@@ -466,101 +531,167 @@ const Reviews = () => {
         </p>
       )}
 
-      <div
-        className={`reviews-c-wrapper ${n > 1 ? "reviews-c-wrapper--peek" : ""}`}
-      >
-        {n > 1 && !loading && (
-          <div className="reviews-c-nav-row">
-            <button
-              type="button"
-              className="reviews-c-arrow"
-              onClick={goToPrev}
-              disabled={loading}
-              aria-label="Previous review"
-              data-cursor="disable"
-            >
-              <MdArrowBack />
-            </button>
-            <button
-              type="button"
-              className="reviews-c-arrow"
-              onClick={goToNext}
-              disabled={loading}
-              aria-label="Next review"
-              data-cursor="disable"
-            >
-              <MdArrowForward />
-            </button>
-          </div>
-        )}
-
-        {loading ? (
+      {loading ? (
+        <div className="reviews-c-wrapper">
           <div className="reviews-glass reviews-empty reviews-c-empty-box">Loading reviews…</div>
-        ) : n === 0 ? (
+        </div>
+      ) : n === 0 ? (
+        <div className="reviews-c-wrapper">
           <div className="reviews-glass reviews-empty reviews-c-empty-box">
             No reviews here yet. Be the first to share feedback using the form below.
           </div>
-        ) : n === 1 ? (
-          <div className="reviews-single-wrap">
-            <ReviewSlide
-              review={reviews[0]}
-              slideIndex={0}
-              expanded={expandedId === reviews[0].id}
+        </div>
+      ) : (
+        <>
+          {/* Desktop: reviewer tabs + one large detail card (reference layout) */}
+          <div className="reviews-c-wrapper reviews-c-wrapper--desktop">
+            {n > 1 && (
+              <div className="reviews-d-tabs">
+                <div className="reviews-d-tabs-scroll" role="tablist" aria-label="Reviews">
+                  {reviews.map((r, i) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={i === currentIndex}
+                      className={`reviews-d-tab ${i === currentIndex ? "is-active" : ""}`}
+                      onClick={() => goToSlide(i)}
+                      data-cursor="disable"
+                    >
+                      <ReviewerAvatar
+                        profile_image_url={r.profile_image_url}
+                        email_hash={r.email_hash}
+                        className="reviews-avatar--tab"
+                      />
+                      <span className="reviews-d-tab-name">{r.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="reviews-d-tabs-arrows">
+                  <button
+                    type="button"
+                    className="reviews-c-arrow"
+                    onClick={goToPrev}
+                    aria-label="Previous review"
+                    data-cursor="disable"
+                  >
+                    <MdArrowBack />
+                  </button>
+                  <button
+                    type="button"
+                    className="reviews-c-arrow"
+                    onClick={goToNext}
+                    aria-label="Next review"
+                    data-cursor="disable"
+                  >
+                    <MdArrowForward />
+                  </button>
+                </div>
+              </div>
+            )}
+            <ReviewDesktopDetail
+              review={reviews[currentIndex]}
+              expanded={expandedId === reviews[currentIndex].id}
               onToggleExpand={() =>
-                setExpandedId((id) => (id === reviews[0].id ? null : reviews[0].id))
+                setExpandedId((id) =>
+                  id === reviews[currentIndex].id ? null : reviews[currentIndex].id
+                )
               }
             />
           </div>
-        ) : (
-          <>
-            <div className="reviews-peek-stage">
-              <div className="reviews-peek-col is-side">
-                <ReviewSlide
-                  review={reviews[(currentIndex - 1 + n) % n]}
-                  slideIndex={(currentIndex - 1 + n) % n}
-                  expanded={false}
-                  onToggleExpand={() => {}}
-                  isSide
-                />
+
+          {/* Mobile: carousel (kept from before) */}
+          <div
+            className={`reviews-c-wrapper reviews-c-wrapper--mobile ${n > 1 ? "reviews-c-wrapper--peek" : ""}`}
+          >
+            {n > 1 && (
+              <div className="reviews-c-nav-row">
+                <button
+                  type="button"
+                  className="reviews-c-arrow"
+                  onClick={goToPrev}
+                  disabled={loading}
+                  aria-label="Previous review"
+                  data-cursor="disable"
+                >
+                  <MdArrowBack />
+                </button>
+                <button
+                  type="button"
+                  className="reviews-c-arrow"
+                  onClick={goToNext}
+                  disabled={loading}
+                  aria-label="Next review"
+                  data-cursor="disable"
+                >
+                  <MdArrowForward />
+                </button>
               </div>
-              <div className="reviews-peek-col is-center">
+            )}
+
+            {n === 1 ? (
+              <div className="reviews-single-wrap">
                 <ReviewSlide
-                  review={reviews[currentIndex]}
-                  slideIndex={currentIndex}
-                  expanded={expandedId === reviews[currentIndex].id}
+                  review={reviews[0]}
+                  slideIndex={0}
+                  expanded={expandedId === reviews[0].id}
                   onToggleExpand={() =>
-                    setExpandedId((id) =>
-                      id === reviews[currentIndex].id ? null : reviews[currentIndex].id
-                    )
+                    setExpandedId((id) => (id === reviews[0].id ? null : reviews[0].id))
                   }
                 />
               </div>
-              <div className="reviews-peek-col is-side">
-                <ReviewSlide
-                  review={reviews[(currentIndex + 1) % n]}
-                  slideIndex={(currentIndex + 1) % n}
-                  expanded={false}
-                  onToggleExpand={() => {}}
-                  isSide
-                />
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="reviews-peek-stage">
+                  <div className="reviews-peek-col is-side">
+                    <ReviewSlide
+                      review={reviews[(currentIndex - 1 + n) % n]}
+                      slideIndex={(currentIndex - 1 + n) % n}
+                      expanded={false}
+                      onToggleExpand={() => {}}
+                      isSide
+                    />
+                  </div>
+                  <div className="reviews-peek-col is-center">
+                    <ReviewSlide
+                      review={reviews[currentIndex]}
+                      slideIndex={currentIndex}
+                      expanded={expandedId === reviews[currentIndex].id}
+                      onToggleExpand={() =>
+                        setExpandedId((id) =>
+                          id === reviews[currentIndex].id ? null : reviews[currentIndex].id
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="reviews-peek-col is-side">
+                    <ReviewSlide
+                      review={reviews[(currentIndex + 1) % n]}
+                      slideIndex={(currentIndex + 1) % n}
+                      expanded={false}
+                      onToggleExpand={() => {}}
+                      isSide
+                    />
+                  </div>
+                </div>
 
-            <div className="reviews-c-dots">
-              {reviews.map((r, index) => (
-                <button
-                  type="button"
-                  key={r.id}
-                  className={`reviews-c-dot ${index === currentIndex ? "reviews-c-dot-active" : ""}`}
-                  onClick={() => goToSlide(index)}
-                  aria-label={`Go to review ${index + 1}`}
-                  data-cursor="disable"
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+                <div className="reviews-c-dots">
+                  {reviews.map((r, index) => (
+                    <button
+                      type="button"
+                      key={r.id}
+                      className={`reviews-c-dot ${index === currentIndex ? "reviews-c-dot-active" : ""}`}
+                      onClick={() => goToSlide(index)}
+                      aria-label={`Go to review ${index + 1}`}
+                      data-cursor="disable"
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
 
       <div className="reviews-glass reviews-form-glass">
         <h3 className="reviews-form-title">Leave a review</h3>
