@@ -152,6 +152,7 @@ Add the same **`VITE_***`** variables in the host’s **Environment Variables**,
 | Reviews don’t show | Row **`status`** must be **`approved`** |
 | Yellow hint on site | Missing **`VITE_SUPABASE_URL`** or **`VITE_SUPABASE_ANON_KEY`** |
 | No email on new review | Email was never wired by default; set **EmailJS** (Step 5A) or a **webhook** (Step 5B), then redeploy |
+| **`23514` … `reviews_status_check`** when setting **`deleted`** | Run **`003_reviews_status_deleted.sql`** (or paste the fix from that file) so `status` allows **`deleted`**. |
 
 ---
 

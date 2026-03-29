@@ -8,6 +8,11 @@
 --   rejected  → not shown (e.g. declined)
 --   deleted   → not shown (treat as removed; row kept in DB if you prefer over hard delete)
 -- ============================================================
+-- Fixes: ERROR 23514 ... violates check constraint "reviews_status_check"
+-- when saving status = deleted (old DBs only had pending/approved/rejected).
+-- ============================================================
+
+alter table public.reviews drop constraint if exists reviews_status_check;
 
 do $$
 declare
