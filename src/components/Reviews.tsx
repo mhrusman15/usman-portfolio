@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import {
-  FaChevronLeft,
-  FaChevronRight,
-  FaGlobe,
-  FaStar,
-  FaRegStar,
-} from "react-icons/fa6";
+import { MdArrowBack, MdArrowForward } from "react-icons/md";
+import { FaGlobe, FaStar, FaRegStar, FaCircleUser } from "react-icons/fa6";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { timeAgo } from "../lib/timeAgo";
 import "./styles/Reviews.css";
 
-const BODY_PREVIEW_LEN = 190;
+const BODY_PREVIEW_LEN = 220;
 const MAX_BYTES = 2 * 1024 * 1024;
 
 type PublicReview = {
@@ -18,8 +13,10 @@ type PublicReview = {
   created_at: string;
   name: string;
   profile_image_url: string | null;
+  email_hash: string | null;
   rating: number;
   body: string;
+  attachment_url: string | null;
 };
 
 function notifyReviewSubmitted(payload: {
@@ -41,7 +38,6 @@ function notifyReviewSubmitted(payload: {
   }).catch(() => {});
 }
 
-/** Optional: set VITE_EMAILJS_* + template vars (see REVIEWS_SETUP.md). */
 async function notifyAdminEmailJS(payload: {
   name: string;
   email: string;
@@ -68,8 +64,15 @@ async function notifyAdminEmailJS(payload: {
     const emailjs = await import("@emailjs/browser");
     await emailjs.send(serviceId, templateId, templateParams, { publicKey });
   } catch {
-    /* ignore — review is already saved */
+    /* ignore */
   }
+}
+
+function isUniqueViolation(err: { code?: string; message?: string } | null) {
+  if (!err) return false;
+  if (err.code === "23505") return true;
+  const m = (err.message || "").toLowerCase();
+  return m.includes("unique") || m.includes("duplicate");
 }
 
 function StarsDisplay({ rating }: { rating: number }) {
@@ -107,66 +110,118 @@ function StarInput({
   );
 }
 
-function ReviewCard({
+function ReviewerAvatar({
+  profile_image_url,
+  email_hash,
+}: {
+  profile_image_url: string | null;
+  email_hash: string | null;
+}) {
+  const [gravatarFailed, setGravatarFailed] = useState(false);
+
+  if (profile_image_url) {
+    return (
+      <img
+        className="reviews-avatar"
+        src={profile_image_url}
+        alt=""
+        loading="lazy"
+      />
+    );
+  }
+
+  if (email_hash && !gravatarFailed) {
+    return (
+      <img
+        className="reviews-avatar"
+        src={`https://www.gravatar.com/avatar/${email_hash}?s=160&d=404`}
+        alt=""
+        loading="lazy"
+        onError={() => setGravatarFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="reviews-avatar reviews-avatar-fallback reviews-avatar-person"
+      aria-hidden
+    >
+      <FaCircleUser />
+    </div>
+  );
+}
+
+function ReviewSlide({
   review,
+  slideIndex,
   expanded,
   onToggleExpand,
-  isCompact,
 }: {
   review: PublicReview;
+  slideIndex: number;
   expanded: boolean;
   onToggleExpand: () => void;
-  isCompact?: boolean;
 }) {
   const long = review.body.length > BODY_PREVIEW_LEN;
   const shown =
     expanded || !long ? review.body : `${review.body.slice(0, BODY_PREVIEW_LEN)}…`;
 
-  const initial = review.name.trim().charAt(0).toUpperCase() || "?";
-
   return (
-    <article className="reviews-glass reviews-card">
-      <div className="reviews-card-header">
-        {review.profile_image_url ? (
-          <img
-            className="reviews-avatar"
-            src={review.profile_image_url}
-            alt=""
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="reviews-avatar reviews-avatar-fallback"
-            aria-hidden
-          >
-            {initial}
+    <div className="reviews-c-slide">
+      <div className="reviews-glass reviews-c-content">
+        <div className="reviews-c-info">
+          <div className="reviews-c-number">
+            <h3>{String(slideIndex + 1).padStart(2, "0")}</h3>
           </div>
-        )}
-        <div>
-          <h4 className="reviews-card-name">{review.name}</h4>
-          <StarsDisplay rating={review.rating} />
+          <div className="reviews-c-details">
+            <div className="reviews-c-header-row">
+              <ReviewerAvatar
+                profile_image_url={review.profile_image_url}
+                email_hash={review.email_hash}
+              />
+              <div>
+                <h4 className="reviews-card-name">{review.name}</h4>
+                <StarsDisplay rating={review.rating} />
+              </div>
+            </div>
+            <p className="reviews-card-body reviews-c-body">
+              {shown}
+              {long && (
+                <button
+                  type="button"
+                  className="reviews-show-more"
+                  onClick={onToggleExpand}
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </p>
+            <div className="reviews-card-footer reviews-c-footer">
+              <span className="reviews-footer-source">
+                <FaGlobe aria-hidden />
+                Portfolio review
+              </span>
+              <time dateTime={review.created_at}>{timeAgo(review.created_at)}</time>
+            </div>
+          </div>
+        </div>
+        <div className="reviews-c-image-wrap">
+          {review.attachment_url ? (
+            <img
+              className="reviews-c-attachment"
+              src={review.attachment_url}
+              alt=""
+              loading="lazy"
+            />
+          ) : (
+            <div className="reviews-c-image-placeholder">
+              <span>Preview</span>
+            </div>
+          )}
         </div>
       </div>
-      <p className={`reviews-card-body ${isCompact ? "reviews-compact-body" : ""}`}>
-        {shown}
-        {long && (
-          <button
-            type="button"
-            className="reviews-show-more"
-            onClick={onToggleExpand}
-          >
-            {expanded ? "Show less" : "Show more"}
-          </button>
-        )}
-      </p>
-      <div className="reviews-card-footer">
-        <span className="reviews-footer-source">
-          <FaGlobe aria-hidden />
-          Portfolio review
-        </span>
-        <time dateTime={review.created_at}>{timeAgo(review.created_at)}</time>
-      </div>
-    </article>
+    </div>
   );
 }
 
@@ -174,18 +229,22 @@ const Reviews = () => {
   const configured = isSupabaseConfigured();
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(configured);
-  const [index, setIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formMsg, setFormMsg] = useState<{ type: "ok" | "err"; text: string } | null>(
     null
   );
+
+  const n = reviews.length;
 
   const loadReviews = useCallback(async () => {
     const sb = getSupabase();
@@ -196,7 +255,9 @@ const Reviews = () => {
     setLoading(true);
     const { data, error } = await sb
       .from("reviews")
-      .select("id, created_at, name, profile_image_url, rating, body")
+      .select(
+        "id, created_at, name, profile_image_url, email_hash, rating, body, attachment_url"
+      )
       .eq("status", "approved")
       .order("created_at", { ascending: false });
 
@@ -213,14 +274,44 @@ const Reviews = () => {
   }, [loadReviews]);
 
   useEffect(() => {
-    setIndex(0);
-  }, [reviews.length]);
+    setCurrentIndex(0);
+  }, [n]);
 
-  const n = reviews.length;
-  const canNav = n > 1;
+  const goToSlide = useCallback(
+    (index: number) => {
+      if (isAnimating || n === 0) return;
+      setIsAnimating(true);
+      setCurrentIndex(index);
+      setTimeout(() => setIsAnimating(false), 500);
+    },
+    [isAnimating, n]
+  );
 
-  const prev = () => setIndex((i) => (i - 1 + n) % n);
-  const next = () => setIndex((i) => (i + 1) % n);
+  const goToPrev = useCallback(() => {
+    const next = currentIndex === 0 ? n - 1 : currentIndex - 1;
+    goToSlide(next);
+  }, [currentIndex, n, goToSlide]);
+
+  const goToNext = useCallback(() => {
+    const next = currentIndex === n - 1 ? 0 : currentIndex + 1;
+    goToSlide(next);
+  }, [currentIndex, n, goToSlide]);
+
+  async function uploadToBucket(
+    sb: NonNullable<ReturnType<typeof getSupabase>>,
+    bucket: string,
+    file: File
+  ): Promise<string | null> {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const safeExt = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext) ? ext : "jpg";
+    const path = `${crypto.randomUUID()}.${safeExt}`;
+    const { error: upErr } = await sb.storage
+      .from(bucket)
+      .upload(path, file, { upsert: false, contentType: file.type || undefined });
+    if (upErr) return null;
+    const { data: pub } = sb.storage.from(bucket).getPublicUrl(path);
+    return pub.publicUrl;
+  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -241,50 +332,72 @@ const Reviews = () => {
       setFormMsg({ type: "err", text: "Please choose a star rating from 1 to 5." });
       return;
     }
-    if (file && file.size > MAX_BYTES) {
+    if (profileFile && profileFile.size > MAX_BYTES) {
       setFormMsg({ type: "err", text: "Profile image must be 2 MB or smaller." });
+      return;
+    }
+    if (attachmentFile && attachmentFile.size > MAX_BYTES) {
+      setFormMsg({ type: "err", text: "Screenshot must be 2 MB or smaller." });
       return;
     }
 
     setSubmitting(true);
     let profileUrl: string | null = null;
+    let attachmentUrl: string | null = null;
 
     try {
-      if (file) {
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const safeExt = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)
-          ? ext
-          : "jpg";
-        const path = `${crypto.randomUUID()}.${safeExt}`;
-        const { error: upErr } = await sb.storage
-          .from("review-avatars")
-          .upload(path, file, { upsert: false, contentType: file.type || undefined });
-        if (upErr) {
+      if (profileFile) {
+        const url = await uploadToBucket(sb, "review-avatars", profileFile);
+        if (!url) {
           setFormMsg({
             type: "err",
-            text: "Could not upload image. Check the Storage bucket and policies in Supabase.",
+            text: "Could not upload profile photo. Check Storage in Supabase.",
           });
           setSubmitting(false);
           return;
         }
-        const { data: pub } = sb.storage.from("review-avatars").getPublicUrl(path);
-        profileUrl = pub.publicUrl;
+        profileUrl = url;
       }
 
-      const { error: insErr } = await sb.from("reviews").insert({
+      if (attachmentFile) {
+        const url = await uploadToBucket(sb, "review-attachments", attachmentFile);
+        if (!url) {
+          setFormMsg({
+            type: "err",
+            text: "Could not upload screenshot. Run migration 002 and check bucket review-attachments.",
+          });
+          setSubmitting(false);
+          return;
+        }
+        attachmentUrl = url;
+      }
+
+      const insertPayload: Record<string, unknown> = {
         name: name.trim(),
         email: email.trim().toLowerCase(),
         rating,
         body: body.trim(),
         profile_image_url: profileUrl,
         status: "pending",
-      });
+      };
+      if (attachmentUrl) insertPayload.attachment_url = attachmentUrl;
+
+      const { error: insErr } = await sb.from("reviews").insert(insertPayload);
 
       if (insErr) {
-        setFormMsg({
-          type: "err",
-          text: insErr.message || "Could not submit review. Check database policies.",
-        });
+        if (isUniqueViolation(insErr)) {
+          setFormMsg({
+            type: "err",
+            text: "This email has already been used for a review. Each address can submit once.",
+          });
+        } else {
+          setFormMsg({
+            type: "err",
+            text:
+              insErr.message ||
+              "Could not submit review. Check database policies and run supabase/migrations/002_reviews_enhancements.sql if needed.",
+          });
+        }
         setSubmitting(false);
         return;
       }
@@ -304,12 +417,13 @@ const Reviews = () => {
 
       setFormMsg({
         type: "ok",
-        text: "Thanks! Your review was sent for approval. It will appear after you confirm it in Supabase.",
+        text: "Your review has been submitted. Thank you for your time — it should appear here within about 30 minutes.",
       });
       setName("");
       setEmail("");
       setBody("");
-      setFile(null);
+      setProfileFile(null);
+      setAttachmentFile(null);
       setRating(5);
     } finally {
       setSubmitting(false);
@@ -319,114 +433,93 @@ const Reviews = () => {
   return (
     <section className="reviews-section section-container" id="reviews">
       <p className="reviews-kicker">Reviews</p>
-      <h2 className="reviews-title">What people say</h2>
+      <h2 className="reviews-title">
+        What <span className="reviews-title-accent">people</span> say
+      </h2>
       <p className="reviews-sub">
-        Submissions are moderated: new reviews stay hidden until you approve them in your
-        Supabase dashboard. Visitor emails are stored for you only and are not shown on the
-        site.
+        Short notes and previews from people I&apos;ve worked with — submitted reviews show up
+        here after a quick check.
       </p>
 
       {!configured && (
         <p className="reviews-config-hint">
           Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to a{" "}
-          <code>.env</code> file, then follow <code>REVIEWS_SETUP.md</code> to create the
-          table and storage bucket.
+          <code>.env</code> file, then follow <code>REVIEWS_SETUP.md</code>.
         </p>
       )}
 
-      <div className="reviews-carousel-block">
-        <div className="reviews-nav-row">
-          <button
-            type="button"
-            className="reviews-nav-btn"
-            onClick={prev}
-            disabled={!canNav || loading}
-            aria-label="Previous review"
-          >
-            <FaChevronLeft />
-          </button>
-          <button
-            type="button"
-            className="reviews-nav-btn"
-            onClick={next}
-            disabled={!canNav || loading}
-            aria-label="Next review"
-          >
-            <FaChevronRight />
-          </button>
-        </div>
+      <div className="reviews-c-wrapper">
+        {n > 0 && (
+          <>
+            <button
+              type="button"
+              className="reviews-c-arrow reviews-c-arrow-left"
+              onClick={goToPrev}
+              disabled={loading || n <= 1}
+              aria-label="Previous review"
+              data-cursor="disable"
+            >
+              <MdArrowBack />
+            </button>
+            <button
+              type="button"
+              className="reviews-c-arrow reviews-c-arrow-right"
+              onClick={goToNext}
+              disabled={loading || n <= 1}
+              aria-label="Next review"
+              data-cursor="disable"
+            >
+              <MdArrowForward />
+            </button>
+          </>
+        )}
 
         {loading ? (
-          <div className="reviews-glass reviews-empty">Loading reviews…</div>
+          <div className="reviews-glass reviews-empty reviews-c-empty-box">Loading reviews…</div>
         ) : n === 0 ? (
-          <div className="reviews-glass reviews-empty">
-            No published reviews yet. Approve submissions in Supabase, or be the first to
-            leave one below.
-          </div>
-        ) : n === 1 ? (
-          <div className="reviews-stage">
-            <div className="reviews-card-wrap is-center" style={{ maxWidth: 420 }}>
-              <ReviewCard
-                review={reviews[0]}
-                expanded={expandedId === reviews[0].id}
-                onToggleExpand={() =>
-                  setExpandedId((id) =>
-                    id === reviews[0].id ? null : reviews[0].id
-                  )
-                }
-              />
-            </div>
+          <div className="reviews-glass reviews-empty reviews-c-empty-box">
+            No reviews here yet. Be the first to share feedback using the form below.
           </div>
         ) : (
-          <div className="reviews-stage">
-            {(() => {
-              const left = (index - 1 + n) % n;
-              const right = (index + 1) % n;
-              return (
-                <>
-                  <div className="reviews-card-wrap is-side">
-                    <ReviewCard
-                      review={reviews[left]}
-                      expanded={expandedId === reviews[left].id}
-                      onToggleExpand={() =>
-                        setExpandedId((id) =>
-                          id === reviews[left].id ? null : reviews[left].id
-                        )
-                      }
-                      isCompact
-                    />
-                  </div>
-                  <div className="reviews-card-wrap is-center">
-                    <ReviewCard
-                      review={reviews[index]}
-                      expanded={expandedId === reviews[index].id}
-                      onToggleExpand={() =>
-                        setExpandedId((id) =>
-                          id === reviews[index].id ? null : reviews[index].id
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="reviews-card-wrap is-side">
-                    <ReviewCard
-                      review={reviews[right]}
-                      expanded={expandedId === reviews[right].id}
-                      onToggleExpand={() =>
-                        setExpandedId((id) =>
-                          id === reviews[right].id ? null : reviews[right].id
-                        )
-                      }
-                      isCompact
-                    />
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+          <>
+            <div className="reviews-c-track-container">
+              <div
+                className="reviews-c-track"
+                style={{
+                  transform: `translate3d(-${currentIndex * 100}%, 0, 0)`,
+                }}
+              >
+                {reviews.map((review, i) => (
+                  <ReviewSlide
+                    key={review.id}
+                    review={review}
+                    slideIndex={i}
+                    expanded={expandedId === review.id}
+                    onToggleExpand={() =>
+                      setExpandedId((id) => (id === review.id ? null : review.id))
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="reviews-c-dots">
+              {reviews.map((r, index) => (
+                <button
+                  type="button"
+                  key={r.id}
+                  className={`reviews-c-dot ${index === currentIndex ? "reviews-c-dot-active" : ""}`}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to review ${index + 1}`}
+                  data-cursor="disable"
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      <div className="reviews-glass">
+      <div className="reviews-glass reviews-form-glass">
         <h3 className="reviews-form-title">Leave a review</h3>
         <form className="reviews-form-grid" onSubmit={onSubmit} noValidate>
           <div>
@@ -457,6 +550,7 @@ const Reviews = () => {
               required
               disabled={!configured || submitting}
             />
+            <p className="reviews-file-hint">One review per email address.</p>
           </div>
           <div className="reviews-field-full">
             <span className="reviews-label">Rating</span>
@@ -471,10 +565,29 @@ const Reviews = () => {
               type="file"
               accept="image/jpeg,image/png,image/gif,image/webp"
               className="reviews-input"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)}
               disabled={!configured || submitting}
             />
-            <p className="reviews-file-hint">Max 2 MB. JPG, PNG, GIF, or WebP.</p>
+            <p className="reviews-file-hint">
+              If you skip this, we use your Gravatar for that email when available; otherwise a
+              default icon. Max 2 MB.
+            </p>
+          </div>
+          <div className="reviews-field-full">
+            <label className="reviews-label" htmlFor="review-screenshot">
+              Screenshot (optional)
+            </label>
+            <input
+              id="review-screenshot"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="reviews-input"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              disabled={!configured || submitting}
+            />
+            <p className="reviews-file-hint">
+              e.g. website or app screen — shows on the right in the review slider. Max 2 MB.
+            </p>
           </div>
           <div className="reviews-field-full">
             <label className="reviews-label" htmlFor="review-body">
@@ -496,7 +609,7 @@ const Reviews = () => {
               className="reviews-submit"
               disabled={!configured || submitting}
             >
-              {submitting ? "Sending…" : "Submit for approval"}
+              {submitting ? "Sending…" : "Submit review"}
             </button>
             {formMsg && (
               <p

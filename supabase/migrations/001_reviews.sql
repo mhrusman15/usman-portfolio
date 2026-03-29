@@ -2,8 +2,8 @@
 -- PORTFOLIO REVIEWS — run in Supabase
 -- Dashboard → SQL Editor → New query → paste ALL of this → Run
 -- ============================================================
--- After this runs: Table Editor → reviews → set status = approved
--- to show a review on your site. Pending = hidden from visitors.
+-- Table Editor → reviews → status: pending | approved | rejected | deleted
+-- (Run 003_reviews_status_deleted.sql on older DBs that lack `deleted`.)
 -- ============================================================
 
 -- 1) Reviews table
@@ -15,7 +15,7 @@ create table if not exists public.reviews (
   profile_image_url text,
   rating int not null check (rating >= 1 and rating <= 5),
   body text not null,
-  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected'))
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected', 'deleted'))
 );
 
 alter table public.reviews enable row level security;

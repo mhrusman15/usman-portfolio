@@ -2,6 +2,8 @@
 
 Visitors can submit a review with **name**, **email**, optional **profile photo**, **1–5 stars**, and **text**. Rows are saved as **`pending`**. Only **`approved`** reviews appear on the site. **Email is stored for you** and is **not** selected in the app for public display.
 
+**Status (Table Editor → `status` column):** **`pending`** (new), **`approved`** (live on site), **`rejected`** (hidden), **`deleted`** (soft delete — hidden, row kept). Run **`003_reviews_status_deleted.sql`** if your table was created before `deleted` existed.
+
 ---
 
 ## Step 1: Create a Supabase project
@@ -15,14 +17,16 @@ Visitors can submit a review with **name**, **email**, optional **profile photo*
 ## Step 2: Run the database SQL
 
 1. In Supabase: **SQL Editor** → **New query**.
-2. Open `supabase/migrations/001_reviews.sql` in this repo, copy the full file, paste into the editor.
-3. Click **Run**. You should see no errors.
+2. Open `supabase/migrations/001_reviews.sql`, copy the full file, paste, **Run**.
+3. Open `supabase/migrations/002_reviews_enhancements.sql`, copy, paste, **Run** (one review per email, Gravatar support, screenshots, `review-attachments` bucket). If the unique-email step fails, delete duplicate rows that share the same email and run `002` again.
 
-This creates:
+4. Open `supabase/migrations/003_reviews_status_deleted.sql`, copy, paste, **Run** (adds **`deleted`** as a valid `status` for soft-remove).
 
-- Table **`reviews`** with `status`: `pending` | `approved` | `rejected`
-- **RLS** so anonymous users can **insert** only `pending`, and **read** only `approved`
-- Storage bucket **`review-avatars`** (public) with policies so visitors can **upload** avatars
+**`001` creates:** table **`reviews`**, RLS, bucket **`review-avatars`**.
+
+**`002` adds:** unique **`email`**, **`email_hash`**, **`attachment_url`**, trigger, bucket **`review-attachments`**.
+
+**`003` updates:** `status` check so you can use **`pending`**, **`approved`**, **`rejected`**, **`deleted`** in Table Editor.
 
 ---
 
@@ -48,8 +52,9 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 1. Supabase → **Table Editor** → **`reviews`**.
 2. New submissions appear with **`status` = `pending`** (you can sort by **`created_at`**).
 3. To **publish** on the portfolio: set **`status`** to **`approved`**.
-4. To **hide** without deleting: set **`status`** to **`rejected`** (the site only loads `approved`).
-5. To **remove** completely: delete the row.
+4. To **hide** (declined): set **`status`** to **`rejected`**.
+5. To **soft delete** (hidden like removed, row kept): set **`status`** to **`deleted`**.
+6. To **remove** the row permanently: use **Delete row** in Table Editor (hard delete).
 
 There is no admin UI in this repo; the dashboard is your moderation panel.
 
