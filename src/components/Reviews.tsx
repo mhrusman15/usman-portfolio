@@ -41,6 +41,37 @@ function notifyReviewSubmitted(payload: {
   }).catch(() => {});
 }
 
+/** Optional: set VITE_EMAILJS_* + template vars (see REVIEWS_SETUP.md). */
+async function notifyAdminEmailJS(payload: {
+  name: string;
+  email: string;
+  rating: number;
+  body_preview: string;
+}) {
+  const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY?.trim();
+  const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID?.trim();
+  const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID?.trim();
+  if (!publicKey || !serviceId || !templateId) return;
+
+  const tableUrl = import.meta.env.VITE_REVIEW_SUPABASE_TABLE_URL?.trim();
+  const templateParams = {
+    reviewer_name: payload.name,
+    reviewer_email: payload.email,
+    rating: String(payload.rating),
+    review_preview: payload.body_preview,
+    instructions: tableUrl
+      ? `Moderate here: ${tableUrl}`
+      : "Supabase → Table Editor → reviews → set status to approved (show on site) or rejected / delete (hide).",
+  };
+
+  try {
+    const emailjs = await import("@emailjs/browser");
+    await emailjs.send(serviceId, templateId, templateParams, { publicKey });
+  } catch {
+    /* ignore — review is already saved */
+  }
+}
+
 function StarsDisplay({ rating }: { rating: number }) {
   return (
     <div className="reviews-stars-row" aria-label={`${rating} out of 5 stars`}>
@@ -259,6 +290,12 @@ const Reviews = () => {
       }
 
       notifyReviewSubmitted({
+        name: name.trim(),
+        email: email.trim(),
+        rating,
+        body_preview: body.trim().slice(0, 280),
+      });
+      void notifyAdminEmailJS({
         name: name.trim(),
         email: email.trim(),
         rating,

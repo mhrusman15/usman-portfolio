@@ -57,9 +57,46 @@ There is no admin UI in this repo; the dashboard is your moderation panel.
 
 ## Step 5: Email when someone submits (optional)
 
-Supabase does not email you automatically on insert. Pick one:
+Supabase does not email you automatically on insert. The site does **not** send mail unless you add one of the options below.
 
-### A) Webhook URL (built into this app)
+**“Approve / don’t show” buttons inside the email** need a server (e.g. Supabase Edge Function + signed links). This project uses **Supabase Table Editor** instead: you open the table, set **`approved`** to show on the portfolio or **`rejected`** / delete to hide.
+
+### A) EmailJS (simple “new review” email to your inbox)
+
+1. Create a free account at [https://www.emailjs.com](https://www.emailjs.com).
+2. Add an **Email Service** (e.g. Gmail) and connect the inbox where you want alerts (**check spelling**: `gmail.com`, not `gamil.com`).
+3. Create an **Email Template** with these **template variables** (names must match):
+
+   - `{{reviewer_name}}`
+   - `{{reviewer_email}}`
+   - `{{rating}}`
+   - `{{review_preview}}`
+   - `{{instructions}}` — use this in the body for “how to approve” text (the app fills it).
+
+   Example subject: `New portfolio review (pending)`.
+
+4. In **Account → API Keys**, copy the **Public Key**.
+5. In `.env` (and Vercel **Environment Variables**), add:
+
+```env
+VITE_EMAILJS_PUBLIC_KEY=your_public_key
+VITE_EMAILJS_SERVICE_ID=your_service_id
+VITE_EMAILJS_TEMPLATE_ID=your_template_id
+```
+
+6. Optional — one link in the email to your `reviews` table:
+
+```env
+VITE_REVIEW_SUPABASE_TABLE_URL=https://supabase.com/dashboard/project/YOUR_PROJECT_REF/editor/YOUR_TABLE_ROUTE
+```
+
+   In Supabase, open **Table Editor** → **`reviews`**, copy the URL from the browser bar, paste here.
+
+7. **Redeploy** after changing env vars.
+
+If EmailJS is not configured, reviews still save to Supabase; you just won’t get an email.
+
+### B) Webhook URL (built into this app)
 
 Set in `.env`:
 
@@ -85,11 +122,11 @@ After a successful submit, the site sends a **POST** with JSON like:
 Configure the automation to **email you**.  
 Note: the webhook URL is visible in the built frontend bundle; use a **disposable / scoped** automation URL, not a master API key.
 
-### B) Supabase Database Webhooks
+### C) Supabase Database Webhooks
 
 In Supabase: **Database** → **Webhooks** → create a webhook on **`reviews`** **INSERT** to your server or automation URL.
 
-### C) No automation
+### D) No automation
 
 Open **Table Editor** periodically and filter **`status` = `pending`**.
 
@@ -109,6 +146,7 @@ Add the same **`VITE_***`** variables in the host’s **Environment Variables**,
 | Upload fails | Bucket **`review-avatars`** exists and is **public**; storage policies from SQL applied |
 | Reviews don’t show | Row **`status`** must be **`approved`** |
 | Yellow hint on site | Missing **`VITE_SUPABASE_URL`** or **`VITE_SUPABASE_ANON_KEY`** |
+| No email on new review | Email was never wired by default; set **EmailJS** (Step 5A) or a **webhook** (Step 5B), then redeploy |
 
 ---
 
