@@ -18,7 +18,7 @@ Visitors can submit a review with **name**, **email**, optional **profile photo*
 
 1. In Supabase: **SQL Editor** → **New query**.
 2. Open `supabase/migrations/001_reviews.sql`, copy the full file, paste, **Run**.
-3. Open `supabase/migrations/002_reviews_enhancements.sql`, copy, paste, **Run** (one review per email, Gravatar support, screenshots, `review-attachments` bucket). If the unique-email step fails, delete duplicate rows that share the same email and run `002` again.
+3. Open `supabase/migrations/002_reviews_enhancements.sql`, copy, paste, **Run**. It **removes duplicate emails** first (keeps the **newest** row per address), then adds the unique index. If you need to keep a specific duplicate row instead, delete the others manually in Table Editor, then run `002`.
 
 4. Open `supabase/migrations/003_reviews_status_deleted.sql`, copy, paste, **Run** (adds **`deleted`** as a valid `status` for soft-remove).
 

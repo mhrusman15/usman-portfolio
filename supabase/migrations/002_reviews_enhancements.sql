@@ -1,9 +1,27 @@
 -- Run in Supabase SQL Editor after 001_reviews.sql (existing projects).
 -- New installs: run 001 first, then this file.
+--
+-- If you see: "could not create unique index ... duplicated" — duplicates are removed
+-- below (we keep the newest row per email). Then the index is created.
+
+-- 0) One row per email: delete older duplicates (newest created_at wins; tie-break by id)
+WITH ranked AS (
+  SELECT
+    id,
+    row_number() OVER (
+      PARTITION BY lower(trim(email))
+      ORDER BY created_at DESC NULLS LAST, id DESC
+    ) AS rn
+  FROM public.reviews
+)
+DELETE FROM public.reviews AS r
+USING ranked AS x
+WHERE r.id = x.id
+  AND x.rn > 1;
 
 -- Unique email: one review per address
-create unique index if not exists reviews_email_lower_unique
-  on public.reviews (lower(email));
+CREATE UNIQUE INDEX IF NOT EXISTS reviews_email_lower_unique
+  ON public.reviews (lower(email));
 
 -- Gravatar uses MD5(lowercase email); filled automatically by trigger (no email exposed in API select)
 alter table public.reviews add column if not exists email_hash text;
